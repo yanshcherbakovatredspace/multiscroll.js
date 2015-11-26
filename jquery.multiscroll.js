@@ -1,4 +1,4 @@
-/*!
+/**
  * multiscroll.js 0.1.7 Beta
  * https://github.com/alvarotrigo/multiscroll.js
  * MIT licensed
@@ -6,7 +6,7 @@
  * Copyright (C) 2013 alvarotrigo.com - A project by Alvaro Trigo
  */
 
-(function($, window, document, Math, undefined) {
+(function($) {
 
 	$.fn.multiscroll = function(options) {
 		var MS = $.fn.multiscroll;
@@ -42,13 +42,16 @@
 			'afterLoad': null,
 			'onLeave': null,
 			'afterRender': null,
-			'afterResize': null
+			'afterResize': null,
+			'hashChangeHandlerForAngular': null
 		}, options);
 
 		//Defines the delay to take place before being able to scroll to the next section
 		//BE CAREFUL! Not recommened to change it under 400 for a good behavior in laptops and
 		//Apple devices (laptops, mouses...)
 		var scrollDelay = 600;
+
+		var lastEventTime = [];
 
 		var isTouch = (('ontouchstart' in window) || (navigator.msMaxTouchPoints > 0) || (navigator.maxTouchPoints));
 
@@ -196,9 +199,11 @@
 
 		//detecting any change on the URL to scroll to the given anchor link
 		//(a way to detect back history button as we play with the hashes on the URL)
-		$(window).on('hashchange', hashChangeHandler);
+		//$(window).on('hashchange', hashChangeHandler);
 
 		function hashChangeHandler(){
+
+
 			var value =  window.location.hash.replace('#', '');
 			var sectionAnchor = value;
 
@@ -361,7 +366,10 @@
 			}
 		};
 
-		MS.moveSectionDown = function (){
+		MS.moveSectionDown = function (timeframe){
+
+			console.log('Moving section down', timeframe);
+
 			var next = $('.ms-left .ms-section.active').next('.ms-section');
 
 			if(!next.length && options.loopBottom ){
@@ -479,6 +487,10 @@
 			}
 		}
 
+		function now() {
+			return new Date().getTime();
+		}
+
 		/**
 		 * Detecting mousewheel scrolling
 		 *
@@ -487,23 +499,37 @@
 		 */
 		function MouseWheelHandler(e) {
 			// cross-browser wheel delta
+			console.log(e);
+			return;
 			e = window.event || e;
 			var delta = Math.max(-1, Math.min(1,
 					(e.wheelDelta || -e.deltaY || -e.detail)));
 
-			if (!isMoving) { //if theres any #
+			var rightNow = now();
 
+			var eventTimeframe = (lastEventTime.length == 0) ? 0 : rightNow - lastEventTime[0];
+			console.log('eventimeframe', eventTimeframe);
+
+			if ((lastEventTime.length > 0) && (eventTimeframe > 2000 )) {
+				console.log('Clear event array');
+				lastEventTime = [];
+			} else {
+				lastEventTime.push(e.timeStamp);
+			}
+
+			if ( eventTimeframe > 600 ) {
+				//lastEventTime = now();
+			} else {
 				//scrolling down?
-				if (delta < 0) {
-					MS.moveSectionDown();
+				if ((delta < 0) && (!$('.ms-left').hasClass('ms-easing'))) {
+					MS.moveSectionDown(eventTimeframe);
 				}
 
 				//scrolling up?
-				else {
+				if ((delta > 0) && (!$('.ms-left').hasClass('ms-easing'))){
 					MS.moveSectionUp();
 				}
 			}
-
 
 			return false;
 		}
@@ -515,6 +541,13 @@
 			container.toggleClass('ms-easing', animated);
 
 			container.css(getTransforms(translate3d));
+
+			$(container).one("webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend",
+              function(event) {
+              	console.log('Animation End', $(event.target).hasClass('ms-right'));
+    			$('.ms-left').removeClass('ms-easing');
+    			$('.ms-right').removeClass('ms-easing');
+  			});
 		}
 
 
@@ -662,15 +695,15 @@
 		/**
 		* Scrolls the page to the existent anchor in the URL
 		*/
-		function scrollToAnchor(){
-			//getting the anchor link in the URL and deleting the `#`
-			var sectionAnchor =  window.location.hash.replace('#', '');
-			var section = $('.ms-left .ms-section[data-anchor="'+sectionAnchor+'"]');
+		// function scrollToAnchor(){
+		// 	//getting the anchor link in the URL and deleting the `#`
+		// 	var sectionAnchor =  window.location.hash.replace('#', '');
+		// 	var section = $('.ms-left .ms-section[data-anchor="'+sectionAnchor+'"]');
 
-			if(sectionAnchor.length){  //if theres any #
-				scrollPage(section);
-			}
-		}
+		// 	if(sectionAnchor.length){  //if theres any #
+		// 		scrollPage(section);
+		// 	}
+		// }
 
 		/**
 		* Adds or remove the possiblity of scrolling through sections by using the keyboard arrow keys
@@ -836,7 +869,7 @@
 			MS.setMouseWheelScrolling(false);
 
 			$(window)
-				.off('hashchange', hashChangeHandler)
+				//.off('hashchange', hashChangeHandler)
 				.off('resize', doneResizing);
 
 			$(document)
@@ -853,7 +886,7 @@
 			MS.setMouseWheelScrolling(true);
 
 			$(window)
-				.on('hashchange', hashChangeHandler)
+				//.on('hashchange', hashChangeHandler)
 				.on('resize', doneResizing);
 
 			$(document)
@@ -863,4 +896,4 @@
 		};
 
 	};
-})(jQuery, window, document, Math);
+})(jQuery);
