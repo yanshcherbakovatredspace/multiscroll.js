@@ -65,7 +65,7 @@
 		}
 
 		var numberSections = $('.ms-left').find('.ms-section').length;
-		var isMoving = false;
+		var allowEvents = false;
 		var nav;
 		var windowHeight = $(window).height();
 
@@ -192,8 +192,11 @@
 			setBodyClass();
 
 			$(window).on('load', function() {
-				scrollToAnchor();
+				//scrollToAnchor();
 			});
+			
+			console.log('Rendered');
+			allowEvents = true;
 		});
 
 
@@ -393,6 +396,21 @@
 			scrollPage(destiny);
 		};
 
+		function deferredAfterLoad(self, anchorLink, leftDestinationIndex) {
+
+			var d = $.Deferred();
+
+			setTimeout(function () {
+				$.isFunction(options.afterLoad) && options.afterLoad.call(self, anchorLink, (leftDestinationIndex + 1));
+
+				setTimeout(function () {
+					d.resolve();
+				}, scrollDelay);
+			}, options.scrollingSpeed);
+
+			return d.promise();
+		}
+
 		function scrollPage(leftDestination){
 			var leftDestinationIndex = leftDestination.index();
 			var rightDestination = $('.ms-right').find('.ms-section').eq( numberSections -1 - leftDestinationIndex);
@@ -404,7 +422,7 @@
 
 			//preventing from activating the MouseWheelHandler event
 			//more than once if the page is scrolling
-			isMoving = true;
+			allowEvents = false;
 
 			var topPos = {
 				'left' : leftDestination.position().top,
@@ -427,14 +445,11 @@
 				transformContainer($('.ms-left'), translate3dLeft, true);
 				transformContainer($('.ms-right'), translate3dRight, true);
 
-				setTimeout(function () {
-					//callback (afterLoad)
-					$.isFunction(options.afterLoad) && options.afterLoad.call(this, anchorLink, (leftDestinationIndex + 1));
-
-					setTimeout(function () {
-						isMoving = false;
-					}, scrollDelay);
-				}, options.scrollingSpeed);
+				//callback (afterLoad)
+				deferredAfterLoad(this, anchorLink, (leftDestinationIndex + 1)).done(function() {
+					console.log('afterLoad');
+					allowEvents = true;
+				});
 			}else{
 				//callback (onLeave)
 				$.isFunction(options.onLeave) && options.onLeave.call(this, leavingSection, (leftDestinationIndex + 1), yMovement);
@@ -445,7 +460,7 @@
 					$.isFunction(options.afterLoad) && options.afterLoad.call(this, anchorLink, (leftDestinationIndex + 1));
 
 					setTimeout(function () {
-						isMoving = false;
+						//isMoving = ;
 					}, scrollDelay);
 				});
 
@@ -498,38 +513,53 @@
 		 * http://www.sitepoint.com/html5-javascript-mouse-wheel/
 		 */
 		function MouseWheelHandler(e) {
-			// cross-browser wheel delta
-			console.log(e);
-			return;
+			//cross-browser wheel delta
+			if (!allowEvents) {
+				console.log('Rejecting Mouse Events', e.timeStamp + 'isMoving' + allowEvents);
+				return;
+			}
+			console.log('Accepting Mouse Events', e.timeStamp + 'isMoving' + allowEvents);
 			e = window.event || e;
 			var delta = Math.max(-1, Math.min(1,
 					(e.wheelDelta || -e.deltaY || -e.detail)));
 
-			var rightNow = now();
+			// var rightNow = now();
 
-			var eventTimeframe = (lastEventTime.length == 0) ? 0 : rightNow - lastEventTime[0];
-			console.log('eventimeframe', eventTimeframe);
+			// var eventTimeframe = (lastEventTime.length == 0) ? 0 : rightNow - lastEventTime[0];
+			// console.log('eventimeframe', eventTimeframe);
 
-			if ((lastEventTime.length > 0) && (eventTimeframe > 2000 )) {
-				console.log('Clear event array');
-				lastEventTime = [];
-			} else {
-				lastEventTime.push(e.timeStamp);
-			}
+			// lastEventTime.push(e.timeStamp);
 
-			if ( eventTimeframe > 600 ) {
-				//lastEventTime = now();
-			} else {
-				//scrolling down?
-				if ((delta < 0) && (!$('.ms-left').hasClass('ms-easing'))) {
-					MS.moveSectionDown(eventTimeframe);
+
+			// if ((lastEventTime.length > 0) && (eventTimeframe > 600 )) {
+			// 	console.log('Clear event array');
+			// 	lastEventTime = [];
+			// } else {
+			// 	lastEventTime.push(e.timeStamp);
+			// }
+
+			if ((delta < 0) && (!$('.ms-left').hasClass('ms-easing'))) {
+					MS.moveSectionDown(0);
 				}
 
 				//scrolling up?
 				if ((delta > 0) && (!$('.ms-left').hasClass('ms-easing'))){
 					MS.moveSectionUp();
 				}
-			}
+
+			// if ( eventTimeframe > 600 ) {
+			// 	//lastEventTime = now();
+			// } else {
+			// 	//scrolling down?
+			// 	if ((delta < 0) && (!$('.ms-left').hasClass('ms-easing'))) {
+			// 		MS.moveSectionDown(eventTimeframe);
+			// 	}
+
+			// 	//scrolling up?
+			// 	if ((delta > 0) && (!$('.ms-left').hasClass('ms-easing'))){
+			// 		MS.moveSectionUp();
+			// 	}
+			// }
 
 			return false;
 		}
