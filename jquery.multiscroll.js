@@ -194,7 +194,7 @@
 			$(window).on('load', function() {
 				//scrollToAnchor();
 			});
-			
+
 			console.log('Rendered');
 			allowEvents = true;
 		});
