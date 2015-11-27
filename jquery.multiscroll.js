@@ -186,7 +186,7 @@
 			$.isFunction( options.afterRender ) && options.afterRender.call( this);
 
 			//scrolling to the defined active section and adjusting right and left panels
-			silentScroll();
+			//silentScroll();
 
 			//setting the class for the body element
 			setBodyClass();
