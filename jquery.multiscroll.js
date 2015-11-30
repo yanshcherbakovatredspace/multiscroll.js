@@ -136,8 +136,6 @@
 				$(this).attr('data-anchor', options.anchors[sectionIndex]);
 			}
 
-			
-		}).promise().done(function() {
 			if(options.verticalCentered){
 				addTableClass($(this));
 			}
