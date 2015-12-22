@@ -68,7 +68,7 @@
 		var allowEvents = false;
 		var nav;
 		var windowHeight = $(window).height();
-
+		var eventCount = 0;
 
 		addMouseWheelHandler();
 		addTouchHandler();
@@ -437,6 +437,7 @@
 			// Use CSS3 translate functionality or...
 			if (options.css3){
 				//callback (onLeave)
+				eventCount++;
 				$.isFunction(options.onLeave) && options.onLeave.call(this, leavingSection, (leftDestinationIndex + 1), yMovement);
 
 				var translate3dLeft = 'translate3d(0px, -' + topPos['left'] + 'px, 0px)';
@@ -447,7 +448,13 @@
 
 				//callback (afterLoad)
 				deferredAfterLoad(this, anchorLink, (leftDestinationIndex + 1)).done(function() {
-					console.log('afterLoad');
+					eventCount--;
+					if (eventCount !== 0) {
+						return;
+					}
+					//console.log('afterLoad');
+					$('.ms-left').removeClass('ms-easing');
+    				$('.ms-right').removeClass('ms-easing');
 					allowEvents = true;
 				});
 			}else{
@@ -572,12 +579,12 @@
 
 			container.css(getTransforms(translate3d));
 
-			$(container).one("webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend",
-              function(event) {
-              	console.log('Animation End', $(event.target).hasClass('ms-right'));
-    			$('.ms-left').removeClass('ms-easing');
-    			$('.ms-right').removeClass('ms-easing');
-  			});
+			//$(container).one("webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend",
+              //function(event) {
+              	// console.log('Animation End', $(event.target).hasClass('ms-right'));
+    			//$('.ms-left').removeClass('ms-easing');
+    			//$('.ms-right').removeClass('ms-easing');
+  			//});
 		}
 
 
